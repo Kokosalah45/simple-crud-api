@@ -1,10 +1,14 @@
 import express from "express";
+import {
+  createProduct,
+  getProducts,
+  deleteProduct,
+} from "../controllers/product/index.js";
 
 const productRouter = express.Router();
 
-productRouter.get("/", (req, res) => {
-  res.json({
-    product: "koko",
-  });
-});
+productRouter.get("/", getProducts);
+productRouter.post("/", createProduct);
+productRouter.delete("/", deleteProduct);
+
 export default productRouter;

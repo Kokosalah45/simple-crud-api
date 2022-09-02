@@ -1,8 +1,9 @@
 import express from "express";
-import productRouter from "./product-router.js";
+import { productRouter } from "./index.js";
 
 const apiRouter = express.Router();
-apiRouter.use("/product", productRouter);
+
+apiRouter.use("/products", productRouter);
 
 apiRouter.get("/", (req, res) => {
   res.send("HI API !");
