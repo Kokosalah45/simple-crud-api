@@ -1,4 +1,5 @@
 import prisma from "../../db/index.js";
+import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
 import validateData from "../../utils/validate.js";
 
@@ -41,9 +42,11 @@ const createProductSchema = z.object({
 
 export default async function createProduct(req, res) {
   try {
+    //this might throw an error
     const { productName, productPrice, productDescription } =
       await validateData(req.body, createProductSchema);
 
+    //this might throw an error
     const product = await prisma.product.create({
       data: {
         name: productName,
@@ -53,17 +56,22 @@ export default async function createProduct(req, res) {
     });
     res.json({ success: true, product });
   } catch (e) {
+    let response = { success: false, details: null };
     if (e instanceof ZodError) {
-      res.json({ success: false, e });
-    } else {
-      const { code } = e;
-
-      if (code === "P2002") {
-        res.json({
-          success: false,
-          details: "name of record already exits !",
-        });
+      response = { ...response, details: { userInputError: e.flatten() } };
+    }
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      // The .code property can be accessed in a type-safe manner
+      if (e.code === "P2002") {
+        response = {
+          ...response,
+          details: {
+            DatabaseError:
+              "There is a unique constraint violation, a new product cannot be created with this name",
+          },
+        };
       }
     }
+    res.json(response);
   }
 }

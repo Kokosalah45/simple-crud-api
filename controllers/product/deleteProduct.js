@@ -1,4 +1,5 @@
 import prisma from "../../db/index.js";
+import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
 import validateData from "../../utils/validate.js";
 
@@ -19,15 +20,20 @@ export default async function deleteProduct(req, res) {
     });
     res.json({ success: true, product });
   } catch (e) {
-    const { code } = e;
+    let response = { success: false, details: null };
     if (e instanceof ZodError) {
-      res.json({ e, success: false });
+      response = { ...response, details: { userInputError: e.flatten() } };
     }
-    if (code === "P2025") {
-      res.json({
-        details: "Record to delete does not exist",
-        success: false,
-      });
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      // The .code property can be accessed in a type-safe manner
+
+      if (e.code === "P2025") {
+        response = {
+          ...response,
+          details: { DatabaseError: "Record Does not exist" },
+        };
+      }
     }
+    res.json(response);
   }
 }
